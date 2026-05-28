@@ -6,7 +6,8 @@ import {
   ResponsiveContainer, Legend,
 } from "recharts"
 import { createClient } from "@/lib/supabase/client"
-import { Plus, Save } from "lucide-react"
+import { Plus, Save, Loader2 } from "lucide-react"
+import { toast } from "sonner"
 
 interface Props {
   workoutsByWeek: Array<{ week: string; count: number }>
@@ -29,7 +30,7 @@ export default function ProgressCharts({ workoutsByWeek, prsByExercise, measurem
     setSaving(true)
     const supabase = createClient()
     const now = new Date().toISOString()
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("body_measurements")
       .insert({
         user_id: userId,
@@ -40,15 +41,18 @@ export default function ProgressCharts({ workoutsByWeek, prsByExercise, measurem
       .select()
       .single()
 
-    if (data) {
+    if (error || !data) {
+      toast.error("Failed to save measurement")
+    } else {
       setLocalMeasurements(prev => [...prev, {
         date: now.split("T")[0],
         weight: data.weight_kg,
         bodyFat: data.body_fat_percent,
       }])
+      setMeasForm({ weight: "", bodyFat: "" })
+      setShowMeasForm(false)
+      toast.success("Measurement saved!")
     }
-    setMeasForm({ weight: "", bodyFat: "" })
-    setShowMeasForm(false)
     setSaving(false)
   }
 
@@ -156,9 +160,9 @@ export default function ProgressCharts({ workoutsByWeek, prsByExercise, measurem
             <button
               onClick={saveMeasurement}
               disabled={saving}
-              className="w-full py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm transition-colors flex items-center justify-center gap-1.5 font-medium"
+              className="w-full py-2 bg-orange-500 hover:bg-orange-600 disabled:opacity-60 text-white rounded-lg text-sm transition-colors flex items-center justify-center gap-1.5 font-medium"
             >
-              <Save size={14} />
+              {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
               {saving ? "Saving..." : "Save measurement"}
             </button>
           </div>

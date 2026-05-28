@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
-import { User, Save, LogOut } from "lucide-react"
+import { User, Save, LogOut, Loader2 } from "lucide-react"
 import { logout } from "@/app/auth/actions"
+import { toast } from "sonner"
 
 interface Profile {
   full_name: string | null
@@ -17,7 +18,6 @@ export default function ProfilePage() {
   const [email, setEmail] = useState("")
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
 
   useEffect(() => {
     const supabase = createClient()
@@ -44,7 +44,7 @@ export default function ProfilePage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    await supabase.from("profiles").update({
+    const { error } = await supabase.from("profiles").update({
       full_name: profile.full_name || null,
       username: profile.username || null,
       height_cm: profile.height_cm,
@@ -53,8 +53,11 @@ export default function ProfilePage() {
     }).eq("id", user.id)
 
     setSaving(false)
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
+    if (error) {
+      toast.error("Failed to save profile")
+    } else {
+      toast.success("Profile saved!")
+    }
   }
 
   if (loading) return <div className="animate-pulse text-zinc-600 py-20 text-center">Loading...</div>
@@ -139,12 +142,10 @@ export default function ProfilePage() {
         <button
           type="submit"
           disabled={saving}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium text-sm transition-colors ${
-            saved ? "bg-green-500 text-white" : "bg-orange-500 hover:bg-orange-600 text-white"
-          } disabled:opacity-60`}
+          className="flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium text-sm transition-colors bg-orange-500 hover:bg-orange-600 text-white disabled:opacity-60"
         >
-          <Save size={16} />
-          {saved ? "Saved!" : saving ? "Saving..." : "Save changes"}
+          {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+          {saving ? "Saving..." : "Save changes"}
         </button>
       </form>
 

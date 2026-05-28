@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s \"https://wger.de/api/v2/exerciseimage/?format=json&limit=3\")",
+      "Bash(curl -s \"https://wger.de/api/v2/exerciseinfo/?format=json&language=2&limit=2&offset=0\")",
+      "Bash(curl -s \"https://wger.de/api/v2/exercisecategory/?format=json\")",
+      "Bash(curl -s \"https://wger.de/api/v2/exercise/search/?term=squat&language=english&format=json\")",
+      "Bash(curl -s \"https://wger.de/api/v2/exerciseinfo/?format=json&language=2&limit=2&category=10\")"
+    ]
+  }
+}

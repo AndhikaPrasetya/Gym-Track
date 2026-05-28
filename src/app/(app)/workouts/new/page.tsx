@@ -3,7 +3,8 @@
 import { Suspense, useState, useEffect, useCallback } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
-import { Plus, Search, Trash2, Check, ChevronDown, ChevronUp, X, Dumbbell } from "lucide-react"
+import { Plus, Search, Trash2, Check, ChevronDown, ChevronUp, X, Dumbbell, Loader2 } from "lucide-react"
+import { toast } from "sonner"
 import type { Exercise } from "@/lib/exercisedb"
 
 interface WorkoutSet {
@@ -115,7 +116,11 @@ function NewWorkoutPage() {
       .select()
       .single()
 
-    if (wErr || !workout) { setSaving(false); return }
+    if (wErr || !workout) {
+      setSaving(false)
+      toast.error("Failed to save workout")
+      return
+    }
 
     for (let i = 0; i < exercises.length; i++) {
       const ex = exercises[i]
@@ -177,6 +182,7 @@ function NewWorkoutPage() {
     }
 
     await supabase.from("workouts").update({ finished_at: new Date().toISOString() }).eq("id", workout.id)
+    toast.success("Workout saved!")
     router.push(`/workouts/${workout.id}`)
   }
 
@@ -303,8 +309,9 @@ function NewWorkoutPage() {
       <button
         onClick={handleSave}
         disabled={saving || !name.trim() || exercises.length === 0}
-        className="w-full py-3 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors"
+        className="w-full py-3 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
       >
+        {saving && <Loader2 size={18} className="animate-spin" />}
         {saving ? "Saving..." : "Finish Workout"}
       </button>
 
