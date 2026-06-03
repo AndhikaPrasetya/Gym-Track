@@ -8,7 +8,8 @@
       "Bash(curl -s \"https://exercisedb.p.rapidapi.com/exercises/exercise/0001\" -H \"x-rapidapi-key: 1328e42c04msh904cb178254b224p1aa3a2jsn96f7a2a0e5ad\" -H \"x-rapidapi-host: exercisedb.p.rapidapi.com\")",
       "Bash(curl -s \"https://wger.de/api/v2/exercise/?format=json&language=2&limit=2\")",
       "Bash(node -e \"const d=require\\('fs'\\).readFileSync\\('/dev/stdin','utf8'\\); console.log\\(JSON.stringify\\(JSON.parse\\(d\\), null, 2\\)\\)\")",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "WebFetch(domain:zpermit.zap.local)"
     ]
   }
 }

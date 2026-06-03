@@ -8,6 +8,7 @@ import {
 import { createClient } from "@/lib/supabase/client"
 import { Plus, Save, Loader2 } from "lucide-react"
 import { toast } from "sonner"
+import DatePicker from "@/components/date-picker"
 
 interface Props {
   workoutsByWeek: Array<{ week: string; count: number }>
@@ -20,7 +21,7 @@ export default function ProgressCharts({ workoutsByWeek, prsByExercise, measurem
   const [selectedExercise, setSelectedExercise] = useState(Object.keys(prsByExercise)[0] || "")
   const [localMeasurements, setLocalMeasurements] = useState(measurements)
   const [showMeasForm, setShowMeasForm] = useState(false)
-  const [measForm, setMeasForm] = useState({ weight: "", bodyFat: "" })
+  const [measForm, setMeasForm] = useState({ weight: "", bodyFat: "", date: new Date().toISOString().split("T")[0] })
   const [saving, setSaving] = useState(false)
 
   const exerciseData = prsByExercise[selectedExercise] || []
@@ -29,7 +30,7 @@ export default function ProgressCharts({ workoutsByWeek, prsByExercise, measurem
     if (!measForm.weight && !measForm.bodyFat) return
     setSaving(true)
     const supabase = createClient()
-    const now = new Date().toISOString()
+    const now = measForm.date ? new Date(measForm.date + "T00:00:00").toISOString() : new Date().toISOString()
     const { data, error } = await supabase
       .from("body_measurements")
       .insert({
@@ -44,12 +45,13 @@ export default function ProgressCharts({ workoutsByWeek, prsByExercise, measurem
     if (error || !data) {
       toast.error("Failed to save measurement")
     } else {
+      const savedDate = measForm.date || now.split("T")[0]
       setLocalMeasurements(prev => [...prev, {
-        date: now.split("T")[0],
+        date: savedDate,
         weight: data.weight_kg,
         bodyFat: data.body_fat_percent,
       }])
-      setMeasForm({ weight: "", bodyFat: "" })
+      setMeasForm({ weight: "", bodyFat: "", date: new Date().toISOString().split("T")[0] })
       setShowMeasForm(false)
       toast.success("Measurement saved!")
     }
@@ -135,6 +137,10 @@ export default function ProgressCharts({ workoutsByWeek, prsByExercise, measurem
 
         {showMeasForm && (
           <div className="mb-5 p-3 bg-zinc-800 rounded-xl space-y-3">
+            <DatePicker
+              value={measForm.date}
+              onChange={date => setMeasForm(f => ({ ...f, date }))}
+            />
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-zinc-400 text-xs mb-1">Weight (kg)</label>

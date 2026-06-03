@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client"
 import { Plus, Search, Trash2, Check, ChevronDown, ChevronUp, X, Dumbbell, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import type { Exercise } from "@/lib/exercisedb"
+import DatePicker from "@/components/date-picker"
 
 interface WorkoutSet {
   id: string
@@ -39,11 +40,21 @@ function NewWorkoutPage() {
   const searchParams = useSearchParams()
   const preloadExerciseId = searchParams.get("exercise")
 
-  const [name, setName] = useState(`Workout — ${new Date().toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" })}`)
+  const [name, setName] = useState("")
+  const [workoutDate, setWorkoutDate] = useState(
+    () => new Date().toISOString().split("T")[0]
+  )
   const [notes, setNotes] = useState("")
   const [exercises, setExercises] = useState<WorkoutExercise[]>([])
   const [showPicker, setShowPicker] = useState(false)
   const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    if (!name) {
+      const d = workoutDate ? new Date(workoutDate + "T00:00:00") : new Date()
+      setName(`Workout — ${d.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" })}`)
+    }
+  }, [workoutDate, name])
 
   const addExercise = useCallback((ex: Exercise) => {
     setExercises(prev => [...prev, {
@@ -109,10 +120,10 @@ function NewWorkoutPage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    const now = new Date().toISOString()
+    const workoutDateTime = workoutDate ? new Date(workoutDate + "T00:00:00").toISOString() : new Date().toISOString()
     const { data: workout, error: wErr } = await supabase
       .from("workouts")
-      .insert({ user_id: user.id, name: name.trim(), notes: notes.trim() || null, started_at: now })
+      .insert({ user_id: user.id, name: name.trim(), notes: notes.trim() || null, started_at: workoutDateTime })
       .select()
       .single()
 
@@ -198,8 +209,11 @@ function NewWorkoutPage() {
         )}
       </div>
 
-      {/* Workout name */}
+      {/* Workout info */}
       <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 mb-4">
+        <div className="mb-3">
+          <DatePicker value={workoutDate} onChange={setWorkoutDate} />
+        </div>
         <input
           value={name}
           onChange={e => setName(e.target.value)}
