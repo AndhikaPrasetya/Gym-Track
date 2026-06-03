@@ -143,6 +143,37 @@ export interface Database {
           achieved_at?: string
         }
       }
+      exercises: {
+        Row: {
+          id: string
+          name: string
+          body_part: string
+          target: string
+          equipment: string
+          instructions: string[]
+          secondary_muscles: string[]
+          description: string | null
+          created_at: string
+        }
+        Insert: {
+          name: string
+          body_part: string
+          target: string
+          equipment?: string
+          instructions?: string[]
+          secondary_muscles?: string[]
+          description?: string | null
+        }
+        Update: {
+          name?: string
+          body_part?: string
+          target?: string
+          equipment?: string
+          instructions?: string[]
+          secondary_muscles?: string[]
+          description?: string | null
+        }
+      }
       body_measurements: {
         Row: {
           id: string

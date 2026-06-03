@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { Search, Filter, X, ChevronRight } from "lucide-react"
+import { Search, Filter, X, ChevronRight, Plus, Loader2 } from "lucide-react"
+import { toast } from "sonner"
 import type { Exercise } from "@/lib/exercisedb"
 
 const BODY_PART_COLORS: Record<string, string> = {
@@ -32,6 +33,7 @@ export default function ExercisesPage() {
   const [exercises, setExercises] = useState<Exercise[]>([])
   const [bodyParts, setBodyParts] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
+  const [seeding, setSeeding] = useState(false)
   const [search, setSearch] = useState("")
   const [selectedPart, setSelectedPart] = useState("")
   const [hasMore, setHasMore] = useState(true)
@@ -42,7 +44,7 @@ export default function ExercisesPage() {
   useEffect(() => {
     fetch("/api/exercises/bodyparts")
       .then(r => r.json())
-      .then(setBodyParts)
+      .then(data => Array.isArray(data) && setBodyParts(data))
   }, [])
 
   useEffect(() => {
@@ -54,10 +56,11 @@ export default function ExercisesPage() {
         if (search) params.set("q", search)
         if (selectedPart) params.set("bodyPart", selectedPart)
         const res = await fetch(`/api/exercises?${params}`)
-        const data: Exercise[] = await res.json()
+        const data = await res.json()
+        const list: Exercise[] = Array.isArray(data) ? data : []
         if (!cancelled) {
-          setExercises(data)
-          setHasMore(data.length === LIMIT)
+          setExercises(list)
+          setHasMore(list.length === LIMIT)
         }
       } finally {
         if (!cancelled) setLoading(false)
@@ -74,11 +77,34 @@ export default function ExercisesPage() {
       if (search) params.set("q", search)
       if (selectedPart) params.set("bodyPart", selectedPart)
       const res = await fetch(`/api/exercises?${params}`)
-      const data: Exercise[] = await res.json()
-      setExercises(prev => [...prev, ...data])
-      setHasMore(data.length === LIMIT)
+      const data = await res.json()
+      const list: Exercise[] = Array.isArray(data) ? data : []
+      setExercises(prev => [...prev, ...list])
+      setHasMore(list.length === LIMIT)
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function handleSeed() {
+    setSeeding(true)
+    try {
+      const res = await fetch("/api/exercises/seed", { method: "POST" })
+      const data = await res.json()
+      if (!res.ok) {
+        toast.error(data.error || "Seed failed")
+        return
+      }
+      toast.success(data.message === "Already seeded" ? "Already seeded" : `Seeded ${data.count} exercises`)
+      // reload
+      const listRes = await fetch(`/api/exercises?limit=${LIMIT}&offset=0`)
+      const listData = await listRes.json()
+      if (Array.isArray(listData)) setExercises(listData)
+      const partsRes = await fetch("/api/exercises/bodyparts")
+      const partsData = await partsRes.json()
+      if (Array.isArray(partsData)) setBodyParts(partsData)
+    } finally {
+      setSeeding(false)
     }
   }
 
@@ -87,11 +113,22 @@ export default function ExercisesPage() {
     setSearch(inputValue)
   }
 
+  const isEmpty = exercises.length === 0 && !loading
+
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-white">Exercise Library</h1>
-        <p className="text-zinc-400 text-sm mt-1">Browse exercises with instructions and muscle diagrams</p>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Exercise Library</h1>
+          <p className="text-zinc-400 text-sm mt-1">Browse and manage your exercise list</p>
+        </div>
+        <Link
+          href="/exercises/new"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-medium transition-colors"
+        >
+          <Plus size={16} />
+          New Exercise
+        </Link>
       </div>
 
       {/* Search & filter */}
@@ -151,9 +188,19 @@ export default function ExercisesPage() {
         </div>
       )}
 
-      {/* Grid */}
-      {exercises.length === 0 && !loading ? (
-        <div className="text-center py-16 text-zinc-500">No exercises found</div>
+      {/* Empty state */}
+      {isEmpty ? (
+        <div className="text-center py-20">
+          <p className="text-zinc-500 mb-4">No exercises found.</p>
+          <button
+            onClick={handleSeed}
+            disabled={seeding}
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+          >
+            {seeding && <Loader2 size={15} className="animate-spin" />}
+            {seeding ? "Seeding..." : "Load default exercises"}
+          </button>
+        </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {exercises.map(ex => (
@@ -171,7 +218,7 @@ export default function ExercisesPage() {
         </div>
       )}
 
-      {hasMore && !loading && (
+      {hasMore && !loading && exercises.length > 0 && (
         <div className="flex justify-center mt-8">
           <button
             onClick={loadMore}

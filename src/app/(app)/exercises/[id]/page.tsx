@@ -1,20 +1,18 @@
 import Image from "next/image"
 import Link from "next/link"
-import { ChevronLeft, Dumbbell, Target, Zap } from "lucide-react"
+import { ChevronLeft, Dumbbell, Target, Zap, Pencil } from "lucide-react"
 import { getExerciseById } from "@/lib/exercisedb"
 import { notFound } from "next/navigation"
+import DeleteExerciseButton from "./DeleteExerciseButton"
 
 const BODY_PART_BG: Record<string, string> = {
+  abs: "from-zinc-900 to-zinc-800/30 text-zinc-400/20",
+  arms: "from-indigo-950 to-indigo-900/30 text-indigo-400/20",
   back: "from-blue-950 to-blue-900/30 text-blue-400/20",
   cardio: "from-red-950 to-red-900/30 text-red-400/20",
   chest: "from-orange-950 to-orange-900/30 text-orange-400/20",
-  "lower arms": "from-yellow-950 to-yellow-900/30 text-yellow-400/20",
-  "lower legs": "from-green-950 to-green-900/30 text-green-400/20",
-  neck: "from-purple-950 to-purple-900/30 text-purple-400/20",
+  legs: "from-teal-950 to-teal-900/30 text-teal-400/20",
   shoulders: "from-pink-950 to-pink-900/30 text-pink-400/20",
-  "upper arms": "from-indigo-950 to-indigo-900/30 text-indigo-400/20",
-  "upper legs": "from-teal-950 to-teal-900/30 text-teal-400/20",
-  waist: "from-zinc-900 to-zinc-800/30 text-zinc-400/20",
 }
 
 export default async function ExerciseDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -29,13 +27,24 @@ export default async function ExerciseDetailPage({ params }: { params: Promise<{
 
   return (
     <div className="max-w-3xl">
-      <Link href="/exercises" className="inline-flex items-center gap-1.5 text-zinc-400 hover:text-white text-sm mb-6 transition-colors">
-        <ChevronLeft size={16} />
-        Back to exercises
-      </Link>
+      <div className="flex items-center justify-between mb-6">
+        <Link href="/exercises" className="inline-flex items-center gap-1.5 text-zinc-400 hover:text-white text-sm transition-colors">
+          <ChevronLeft size={16} />
+          Back to exercises
+        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href={`/exercises/${id}/edit`}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-xs font-medium transition-colors"
+          >
+            <Pencil size={13} />
+            Edit
+          </Link>
+          <DeleteExerciseButton id={id} />
+        </div>
+      </div>
 
       <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
-        {/* Exercise image / body part banner */}
         <div className={`relative h-48 flex items-center justify-center bg-linear-to-br ${BODY_PART_BG[exercise.bodyPart] || "from-zinc-900 to-zinc-800/30 text-zinc-400/20"}`}>
           {exercise.gifUrl ? (
             <Image src={exercise.gifUrl} alt={exercise.name} fill className="object-contain p-4" unoptimized />
@@ -49,7 +58,6 @@ export default async function ExerciseDetailPage({ params }: { params: Promise<{
         <div className="p-6">
           <h1 className="text-2xl font-bold text-white capitalize mb-4">{exercise.name}</h1>
 
-          {/* Badges */}
           <div className="flex flex-wrap gap-2 mb-4">
             <Badge icon={<Dumbbell size={14} />} label={exercise.bodyPart} color="orange" />
             <Badge icon={<Target size={14} />} label={exercise.target} color="blue" />
@@ -60,7 +68,6 @@ export default async function ExerciseDetailPage({ params }: { params: Promise<{
             <p className="text-zinc-400 text-sm leading-relaxed mb-6">{exercise.description}</p>
           )}
 
-          {/* Secondary muscles */}
           {exercise.secondaryMuscles?.length > 0 && (
             <div className="mb-6">
               <h2 className="text-zinc-400 text-xs font-semibold uppercase tracking-wider mb-2">Secondary muscles</h2>
@@ -72,7 +79,6 @@ export default async function ExerciseDetailPage({ params }: { params: Promise<{
             </div>
           )}
 
-          {/* Instructions */}
           {exercise.instructions?.length > 0 && (
             <div>
               <h2 className="text-zinc-400 text-xs font-semibold uppercase tracking-wider mb-3">Instructions</h2>
@@ -89,7 +95,6 @@ export default async function ExerciseDetailPage({ params }: { params: Promise<{
             </div>
           )}
 
-          {/* Add to workout */}
           <div className="mt-8 pt-6 border-t border-zinc-800">
             <Link
               href={`/workouts/new?exercise=${exercise.id}`}
